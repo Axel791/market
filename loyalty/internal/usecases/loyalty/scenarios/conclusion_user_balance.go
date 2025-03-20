@@ -1,0 +1,71 @@
+package scenarios
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/Axel791/loyalty/internal/domains"
+	"github.com/Axel791/loyalty/internal/usecases/loyalty/dto"
+	"github.com/Axel791/loyalty/internal/usecases/loyalty/repositories"
+)
+
+type ConclusionUserBalanceHandler struct {
+	loyaltyRepository        repositories.LoyaltyRepository
+	loyaltyHistoryRepository repositories.LoyaltyHistoryRepository
+	unitOfWork               repositories.UnitOfWork
+}
+
+func NewConclusionUserBalance(
+	loyaltyRepository repositories.LoyaltyRepository,
+	loyaltyHistoryRepository repositories.LoyaltyHistoryRepository,
+	unitOfWork repositories.UnitOfWork,
+) *ConclusionUserBalanceHandler {
+	return &ConclusionUserBalanceHandler{
+		loyaltyRepository:        loyaltyRepository,
+		loyaltyHistoryRepository: loyaltyHistoryRepository,
+		unitOfWork:               unitOfWork,
+	}
+}
+
+func (s *ConclusionUserBalanceHandler) Execute(
+	ctx context.Context,
+	balance dto.LoyaltyBalance,
+) error {
+	var domainLoyaltyBalance domains.LoyaltyBalance
+	domainLoyaltyBalance = domains.LoyaltyBalance{
+		UserID: balance.UserID,
+		Count:  balance.Count,
+	}
+	if err := domainLoyaltyBalance.ValidateCount(); err != nil {
+		return err
+	}
+
+	if err := domainLoyaltyBalance.ValidateUserID(); err != nil {
+		return err
+	}
+
+	var loyaltyHistory domains.LoyaltyHistory
+	loyaltyHistory = domains.LoyaltyHistory{
+		UserID: balance.UserID,
+		Count:  balance.Count,
+	}
+
+	err := s.unitOfWork.Do(ctx, func(txContext context.Context) error {
+
+		if err := s.loyaltyRepository.ConclusionUserBalance(txContext, domainLoyaltyBalance); err != nil {
+			return fmt.Errorf("error conclusion balance: %w", err)
+		}
+
+		if err := s.loyaltyHistoryRepository.CreateLoyaltyHistory(txContext, loyaltyHistory); err != nil {
+			return fmt.Errorf("error create loyalty history: %w", err)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("error conclusion balance: %w", err)
+	}
+
+	return nil
+}
