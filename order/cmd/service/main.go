@@ -69,7 +69,7 @@ func main() {
 	router.Route("/api/v1", func(r chi.Router) {
 		r.Method(
 			http.MethodPost,
-			"order/",
+			"/order",
 			apiV1Handlers.NewCreateOrderHandler(log, createOrderUseCase),
 		)
 	})
