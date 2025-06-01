@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package loyalty;
+
+option go_package = "github.com/Axel791/loyalty/internal/grpc/v1/pb;pb";
+
+service LoyaltyService {
+  rpc CreateLoyaltyBalance (CreateLoyaltyBalanceRequest) returns (CreateLoyaltyBalanceResponse);
+  rpc ConcludeUserBalance (ConcludeUserBalanceRequest) returns (ConcludeUserBalanceResponse);
+}
+
+// Запрос c user_id, order_id, count
+message ConcludeUserBalanceRequest {
+  int64 order_id = 1;
+  int64 user_id  = 2;
+  int64 count    = 3;
+}
+
+message ConcludeUserBalanceResponse {
+  bool   success       = 1;
+  string error_message = 2;
+}
+
+message CreateLoyaltyBalanceRequest {
+  int64 user_id = 1;
+}
+
+message CreateLoyaltyBalanceResponse {
+  bool success = 1;
+  string error_message = 2;
+}
